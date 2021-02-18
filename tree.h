@@ -17,7 +17,7 @@ public:
 
 
 	
-	vector<pair<vector<int>, double>> PST3(double ep, vector<int>& id, double ratio, int k) {	//this->depthgram: 1,
+	vector<pair<vector<int>, double>> PST3(double ep, vector<int>& id, double ratio, int k) {	//this->depthgram: 1,Ðè´ó¸Ä
 		
 		int eta = 4;
 		vector<int> priv(1);

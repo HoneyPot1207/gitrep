@@ -1,7 +1,7 @@
 #include "prefix.h"
 
 //
-prefixnode::prefixnode(set<int>& idx1, int depth1, deque<int> path1, int parent1, int startRecord1) {
+prefixnode::prefixnode(set<int>& idx1, int depth1, deque<int> path1, int parent1, int startRecord1) {//初始化节点
 	this->idx = idx1;
 	this->depth = depth1;
 	this->path = path1;
@@ -35,9 +35,9 @@ prefix::prefix(engine& eng1) : tree(eng1) {
 
 
 
-int prefix::translate(string s) {
-	if (s2i.find(s) == s2i.end()) {
-		int tag = s2i.size();
+int prefix::translate(string s) {	//把每个字符编号
+	if (s2i.find(s) == s2i.end()) {		//如果没找到
+		int tag = s2i.size();		//tag=目前最大的数
 		s2i[s] = tag;
 		i2s[tag] = s;
 	}
@@ -53,17 +53,17 @@ vector<vector<int>> prefix::tokenize(string s) {						//need test
 	stringstream ss(s);
 	string item;
 	vector<vector<int>> result;
-	while (getline(ss, item, ':')){
+	while (getline(ss, item, ':')){		//一个冒号间隔字符串，即一个字符串一个字符串地读入
 
 		stringstream interss(item);
 		string interitem;
 		vector<int> tokens;
-		while(getline(interss, interitem, ' ')){
-			tokens.push_back(translate(interitem));
+		while(getline(interss, interitem, ' ')){		
+			tokens.push_back(translate(interitem));//字符串中每个字符都编号
 		}
 		result.push_back(tokens);
 	}
-	return result;
+	return result;//返回每个用户编号结束的n个字符
 }
 
 
@@ -74,19 +74,19 @@ prefix::prefix(engine& eng, string filename, vector<int>& id_backup): tree(eng){
 	string s;
 	
 	int i = 0;
-	while (getline(tfile, s)){
+	while (getline(tfile, s)){		//一行一行（一个用户一个用户）读入
 		
 		this->orgraw.push_back(tokenize(s));								//symbol system: -1=>$ start symbol; [0, fanout-2] normal symbols; fanout-1=>& end symbol  
 		id_backup.push_back(i);
 		i ++;
-	}
+	}//orgraw三维数组存放数据
 	
 	tfile.close();
 
 	
 	fanout = 27;
 
-	for(int i = 0; i < orgraw.size(); i ++){
+	for(int i = 0; i < orgraw.size(); i ++){		
 		
 		for(int j = 0; j < orgraw[i].size(); j ++){
 			orgraw[i][j].push_back(26);
@@ -105,16 +105,16 @@ prefix::~prefix() {
 
 
 
-void prefix::initialRoot(vector<int>& id){
+void prefix::initialRoot(vector<int>& id){//初始化根节点
 	this->raw.clear();
-	for(int i = 0; i < orgraw.size(); i ++){
-		if(orgraw[i].size() > 1){
-			int loc = noise::nextInt(eng, orgraw[i].size());
-			this->raw.push_back(orgraw[i][loc]);
+	for(int i = 0; i < orgraw.size(); i ++){//把orgraw中的内容随机选取一个加到raw中，使得每个用户只有一个字符串
+		if(orgraw[i].size() > 1){//如果用户有多个字符串
+			int loc = noise::nextInt(eng, orgraw[i].size());//每个用户的n个字符串中随机选取一个
+			this->raw.push_back(orgraw[i][loc]);//向raw中添加该字符串
 
 		}
-		else{
-			this->raw.push_back(orgraw[i].at(0));
+		else{//如果用户只有一个字符串
+			this->raw.push_back(orgraw[i].at(0));//向raw中添加该字符串
 		}
 	}
 	
@@ -142,7 +142,7 @@ bool compare_vector(pair<int, double> a, pair<int, double> b){
 
 
 
-void prefix::computePST3_delta(int startNode, int endNode, double ep, vector<int>& id, vector<int>& priv, int c, vector<pair<int, int>>& deleteNode, int endn){
+void prefix::computePST3_delta(int startNode, int endNode, double ep, vector<int>& id, vector<int>& priv, int c, vector<pair<int, int>>& deleteNode, int endn){//计算具体的频数
 
 	map<int, int> count; 
 	for(int i = 0; i < priv.size(); i ++)
