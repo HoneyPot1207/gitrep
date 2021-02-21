@@ -17,7 +17,7 @@ public:
 
 
 	
-	vector<pair<vector<int>, double>> PST3(double ep, vector<int>& id, double ratio, int k) {	//this->depthgram: 1,需大改
+	vector<pair<vector<int>, double>> PST3(double ep, vector<int>& id, double ratio, int k) {	//this->depthgram: 1,每次循环都计算上次扩展的节点中哪些节点超过阈值，并扩展这些节点
 		
 		int eta = 4;
 		vector<int> priv(1);//初始化了一个默认为0的元素
@@ -29,7 +29,7 @@ public:
 			step = number1/1000;
 		}
 
-		int group = number1/step;	//假设上面那个if成立，group=1000
+		int group = number1/step;	
 
 		for(int groupi = 0; groupi < group && priv.size() > 0; ){//split the dataset into group to imprive the time efficiency		Line2
 
@@ -37,9 +37,9 @@ public:
 			int endNode = (groupi + 1) * step;//结束节点为第n+1组用户
 			if(groupi == group - 1) endNode = number1;//最后一组不够，则结束节点为最后一个
 			
-			vector<pair<int, int>> deleteNode;	//存储了数对
+			vector<pair<int, int>> deleteNode;	//存储数对
 			if(*priv.begin() > 0){
-				computePST3_delta(startNode,endNode, ep, id, priv, eta, deleteNode, number1);//compute the contributions to frequencies made by users in this group.This function returns the nodes to be expanded，计算节点的频数Line12
+				computePST3_delta(startNode,endNode, ep, id, priv, eta, deleteNode, number1);//compute the contributions to frequencies made by users in this group.This function returns the nodes to be expanded，计算节点的频数，扩张节点
 				groupi ++;//下一层
 			}
 			else{
@@ -52,7 +52,7 @@ public:
 				for(int deletei = 0; deletei < deleteNode.size(); deletei ++){//expand node	line6,7
 			
 					pair<int, int> nodelabel = deleteNode[deletei];//nodelabel先=<0,1>
-					if(nodelabel.second == 1){//超过阈值的节点，要扩展；根节点要扩展
+					if(nodelabel.second == 1){//扩展节点
 						vector<int> children; 
 						expand(priv[nodelabel.first], children, number1, id);//line6, 7，扩展这个节点
 						priv.insert(priv.end(), children.begin(), children.end());//在最后插入children的所有元素
@@ -72,18 +72,18 @@ public:
 	
 
 	
-	void expand(int idx, vector<int>& next, int startRecord, vector<int>& id) {//当前节点加入所有字符子节点，且子节点已统计哪些用户在这一层拥有这个字符，并使leaf属性变为false，不可以再扩展
+	void expand(int idx, vector<int>& next, int startRecord, vector<int>& id) {//当前节点加入所有字符子节点
 
 		if (nodes1[idx]->next.empty()) {//这个节点的子节点是空的，未被扩展
 			vector<T*> children;
 			split_PFS3(idx, children, startRecord, id);//扩展了孩子节点
 			for(int x = 0; x < children.size(); x++){
-				nodes1[idx]->next.push_back(nodes1.size());//这一层节点的子节点就加入这个节点的大小？？？
+				nodes1[idx]->next.push_back(nodes1.size());//这一层节点的next加入1，2，3，4····27（如第一层，类似于编号）
 				next.push_back(nodes1.size());
 				nodes1.push_back(children[x]);//nodesl加入这些子节点
 			}
 		}
-		nodes1[idx]->leaf = false;//这一层leaf属性变为false，不可以再扩展了
+		nodes1[idx]->leaf = false;//这一层leaf属性变为false
 	}
 	
 

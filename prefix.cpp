@@ -154,13 +154,13 @@ void prefix::computePST3_delta(int startNode, int endNode, double ep, vector<int
 		int idx = 0;//字符，从0到字符的最大编号
 		vector<int> seq = this->raw[id[i]];	//seq为当前用户的字符串
 		for(int seqi = 0; seqi < seq.size(); seqi ++){
-			if(nodes1[idx]->leaf == false)//如果这个节点的叶节点不存在
-				idx = nodes1[idx]->next[seq[seqi]];//idx=nodes1[idx]的下一个字符串的字符
+			if(nodes1[idx]->leaf == false)//
+				idx = nodes1[idx]->next[seq[seqi]];//idx=该字符串的第i个字符（数字）
 			else break;
 		}//总之就是遇到子节点，就返回
 
 		if(count.find(idx) != count.end()){//如果count中能找到idx所指的字符，
-			count.find(idx)->second ++;//count，第一个数idx所对应的第二个数就+1
+			count.find(idx)->second ++;//count，第一个数idx所对应的第二个数就+1（频数）
 		}
 	}
 
@@ -172,7 +172,7 @@ void prefix::computePST3_delta(int startNode, int endNode, double ep, vector<int
 		countvector.push_back(itr->second);
 
 	vector<double> noisyone;
-	noise::NoisyVec_delta(eng, number, countvector, noisyone, ep/(2));//去加噪了大概，具体是怎么加噪的不想看了
+	noise::NoisyVec_delta(eng, number, countvector, noisyone, ep/(2));//加噪，结果放在noisyone中
 	
 
 	map<int, double> noisycount; int i = 0; 
@@ -181,7 +181,7 @@ void prefix::computePST3_delta(int startNode, int endNode, double ep, vector<int
 	}
 	
 	for(int i = 0; i < priv.size(); i ++){
-		int nodelabel = priv[i];//nodelabel是可能的第i个字符
+		int nodelabel = priv[i];//nodelabel是节点编号
 		prefixnode* node = this->nodes1[nodelabel];//当前节点的子节点是nodel的这个字符所指的节点
 		
 		node->score += noisycount.find(nodelabel)->second;//频数是这个字符加噪后的频数
@@ -194,7 +194,7 @@ void prefix::computePST3_delta(int startNode, int endNode, double ep, vector<int
 			
 			if(node->score > c* sqrt(2.0*(double)node->npart )/ep && endNode != endn){//频数超过阈值，且不是最后一层
 				deleteNode.push_back(make_pair(i, 1));//deleteNode就存储一个<i,1>
-				node->leaf = false;//leaf改为false，false是扩展吗
+				node->leaf = false;//leaf改为false，还可以再往下找
 			}
 			else{
 				if(endNode == endn){
@@ -227,9 +227,9 @@ vector<pair<vector<int>, double>> prefix::computeTruePST(vector<int>& id, int nu
 			vector<int> oneresult; //一个结果
 			oneresult.insert(oneresult.end(), node->path.begin() + 1, node->path.end());//oneresult中插入从开始到结束的所有字符
 			orgresult.push_back(oneresult);//orgresult中加入oneresult
-			hitnode.push_back(i);//hitnode中加入i
+			hitnode.push_back(i);//hitnode
 		}
-		
+		//orgresult存储了所有以&结尾的高频字符串（仅超过阈值），hitnode为&所在节点编号
 	}
 	
 	vector<double> frequency; frequency.resize(orgresult.size(), 0);//frequency大小为orgresult的大小
@@ -239,21 +239,21 @@ vector<pair<vector<int>, double>> prefix::computeTruePST(vector<int>& id, int nu
 	set<int> checkset;
 
 	for(int j = 0; j < hitnode.size(); j ++){	//对于每一个收录的字符串
-		for(set<int>::iterator itr = this->nodes1[hitnode[j]]->idx.begin(); itr != this->nodes1[hitnode[j]]->idx.end(); itr ++){
+		for(set<int>::iterator itr = this->nodes1[hitnode[j]]->idx.begin(); itr != this->nodes1[hitnode[j]]->idx.end(); itr ++){//遍历&节点对应的所有用户
 			int idx = id[*itr];
-			if(raw[idx].size() == orgresult[j].size())//如果这个用户的字符串的大小与第j个字符串的大小相等，频数+1？？？
+			if(raw[idx].size() == orgresult[j].size())//如果这个用户的字符串的大小与节点计算的对应字符串的大小相等，频数+1
 				frequency[j] += 1;
 		}
 	}
-
+	//frequency中存储了用户字符串与计算字符串大小相同的频数
 
 	vector<double> noisyone;
-	noise::NoisyVec_delta(eng, this->raw.size() - number, frequency, noisyone, ep/(2));//加噪函数
+	noise::NoisyVec_delta(eng, this->raw.size() - number, frequency, noisyone, ep/(2));//加噪函数，noiseone为frequency加噪后的结果
 
 
 	
-	//consistency enforcement
-	computeweightavg(hitnode, noisyone, this->raw.size(), this->raw.size()- number);
+	//consistency enforcement  猜测是根据一定的计算，即原先的频数是分组计算所得，对该频数扩大一定的倍数，使得频数与实际频数尽量相符，
+	computeweightavg(hitnode, noisyone, this->raw.size(), this->raw.size()- number);//加工量noisyone
 	boost(hitnode, noisyone, this->raw.size(), number);
 
 	vector<pair<int, double>> result;
@@ -261,8 +261,8 @@ vector<pair<vector<int>, double>> prefix::computeTruePST(vector<int>& id, int nu
 		result.push_back(make_pair(i, noisyone[i]));
 
 
-	}
-	sort(result.begin(), result.end(), compare_vector);
+	}//把noisyone编号加入result中
+	sort(result.begin(), result.end(), compare_vector);//对result进行排序，也就是按照频数高低给编号排序
 
 	vector<pair<vector<int>, double>> lastresult;
 
@@ -270,13 +270,13 @@ vector<pair<vector<int>, double>> prefix::computeTruePST(vector<int>& id, int nu
 		lastresult.push_back(make_pair(orgresult[result[i].first], result[i].second));
 
 	}
-
+	//根据排好的编号，选出前k个字符串及其频数加入到lastresult中
 	return lastresult;
 }
 
 
 //computeweightavg(hitnode, noisyone, this->raw.size(), number, frequency);
-void prefix::computeweightavg(vector<int>& hitnode, vector<double>& frequency, int number, int usenumber){
+void prefix::computeweightavg(vector<int>& hitnode, vector<double>& frequency, int number, int usenumber){//对noisyone进行了加工
 	double variance = 1.0/usenumber;
 	for(int i = 0; i < frequency.size(); i ++){
 		
