@@ -2,13 +2,13 @@
 
 //
 prefixnode::prefixnode(set<int>& idx1, int depth1, deque<int> path1, int parent1, int startRecord1) {//初始化节点
-	this->idx = idx1;
-	this->depth = depth1;
-	this->path = path1;
+	this->idx = idx1;//id编号
+	this->depth = depth1;//0
+	this->path = path1;//root（-1）
 	this->score = 0;
 	this->leaf = true;
-	this->startRecord = startRecord1;
-	this->parent = parent1;
+	this->startRecord = startRecord1;//0
+	this->parent = parent1;//-1
 	this->npart = 0;
 	this->truehis = 0;
 
@@ -20,7 +20,8 @@ prefixnode::prefixnode(set<int>& idx1, int depth1, deque<int> path1, int parent1
 	this->svalue = 0;
 	this->rootsum = 0;
 }
-//
+//sub[i], f->depth + 1, newpath, idx, startRecord
+//idx=0，children，startRecord=number1=用户数*0.8，id即打乱后的用户编号
 
 
 
@@ -89,7 +90,7 @@ prefix::prefix(engine& eng, string filename, vector<int>& id_backup): tree(eng){
 	for(int i = 0; i < orgraw.size(); i ++){		
 		
 		for(int j = 0; j < orgraw[i].size(); j ++){
-			orgraw[i][j].push_back(26);
+			orgraw[i][j].push_back(26);//在每个字符串的最后加上26，代表&
 		}
 	}
 }
@@ -122,14 +123,14 @@ void prefix::initialRoot(vector<int>& id){//初始化根节点
 	for(int i =0; i < nodes1.size(); i ++){
 		delete nodes1[i];
 	}
-	nodes1.clear();
-	set<int> idx1;
-	for(int i = 0; i < this->raw.size(); i ++){
+	nodes1.clear();//清空nodes1
+	set<int> idx1;//用户编号
+	for(int i = 0; i < this->raw.size(); i ++){//插入用户编号
 		idx1.insert(i);
 	}
-	deque<int> root; root.push_back(-1);
+	deque<int> root; root.push_back(-1);//双端队列，先添加-1
 	prefixnode* x = new prefixnode(idx1, 0, root, -1, 0);
-	nodes1.push_back(x);// the root node*/
+	nodes1.push_back(x);// the root node*/把根节点加入到nodes1中
 
 }
 
@@ -145,60 +146,60 @@ bool compare_vector(pair<int, double> a, pair<int, double> b){
 void prefix::computePST3_delta(int startNode, int endNode, double ep, vector<int>& id, vector<int>& priv, int c, vector<pair<int, int>>& deleteNode, int endn){//计算具体的频数
 
 	map<int, int> count; 
-	for(int i = 0; i < priv.size(); i ++)
+	for(int i = 0; i < priv.size(); i ++)//count中存储与priv数量相等的数对，第一个数是priv[i]，第二个数是0
 		count.insert(make_pair(priv[i], 0));
 
-	for(int i = startNode; i < endNode; i ++){
+	for(int i = startNode; i < endNode; i ++){	//从这组用户的第一个用户开始，到这组用户的最后一个用户为止
 		
-		int idx = 0;
-		vector<int> seq = this->raw[id[i]];
+		int idx = 0;//字符，从0到字符的最大编号
+		vector<int> seq = this->raw[id[i]];	//seq为当前用户的字符串
 		for(int seqi = 0; seqi < seq.size(); seqi ++){
-			if(nodes1[idx]->leaf == false)
-				idx = nodes1[idx]->next[seq[seqi]];
+			if(nodes1[idx]->leaf == false)//如果这个节点的叶节点不存在
+				idx = nodes1[idx]->next[seq[seqi]];//idx=nodes1[idx]的下一个字符串的字符
 			else break;
-		}
+		}//总之就是遇到子节点，就返回
 
-		if(count.find(idx) != count.end()){
-			count.find(idx)->second ++;
+		if(count.find(idx) != count.end()){//如果count中能找到idx所指的字符，
+			count.find(idx)->second ++;//count，第一个数idx所对应的第二个数就+1
 		}
 	}
 
 	
-	int number = endNode - startNode;
+	int number = endNode - startNode;//这一组的用户数量
 
 	vector<double> countvector;
-	for(map<int, int>::iterator itr = count.begin(); itr != count.end(); itr ++)
+	for(map<int, int>::iterator itr = count.begin(); itr != count.end(); itr ++)//countvector中存储count的第二个数，所有用户中含priv的个数
 		countvector.push_back(itr->second);
 
 	vector<double> noisyone;
-	noise::NoisyVec_delta(eng, number, countvector, noisyone, ep/(2));
+	noise::NoisyVec_delta(eng, number, countvector, noisyone, ep/(2));//去加噪了大概，具体是怎么加噪的不想看了
 	
 
 	map<int, double> noisycount; int i = 0; 
-	for(map<int, int>::iterator itr = count.begin(); itr != count.end(); itr ++, i ++){
-		noisycount.insert(make_pair(itr->first, noisyone[i]));
+	for(map<int, int>::iterator itr = count.begin(); itr != count.end(); itr ++, i ++){//itr迭代count
+		noisycount.insert(make_pair(itr->first, noisyone[i]));//noisycount中存储count的第一个数，也就是priv[i]，可能的字符，加噪后的数字
 	}
 	
 	for(int i = 0; i < priv.size(); i ++){
-		int nodelabel = priv[i];
-		prefixnode* node = this->nodes1[nodelabel];
+		int nodelabel = priv[i];//nodelabel是可能的第i个字符
+		prefixnode* node = this->nodes1[nodelabel];//当前节点的子节点是nodel的这个字符所指的节点
 		
-		node->score += noisycount.find(nodelabel)->second;
-		node->npart += number;
+		node->score += noisycount.find(nodelabel)->second;//频数是这个字符加噪后的频数
+		node->npart += number;//npart是这一组的用户数量
 
-		if(! expandable(priv[i])){
+		if(! expandable(priv[i])){//如果它是&，则不可再扩大节点，进入下一次循环（跳出）
 			continue;
 		}
-		if(node->score >  c * sqrt(2.0*(double)node->npart )/ep || endNode == endn){
+		if(node->score >  c * sqrt(2.0*(double)node->npart )/ep || endNode == endn){//如果这个节点的频数大于某个值或此为最后一个用户（即为最后一层）
 			
-			if(node->score > c* sqrt(2.0*(double)node->npart )/ep && endNode != endn){
-				deleteNode.push_back(make_pair(i, 1));
-				node->leaf = false;
+			if(node->score > c* sqrt(2.0*(double)node->npart )/ep && endNode != endn){//频数超过阈值，且不是最后一层
+				deleteNode.push_back(make_pair(i, 1));//deleteNode就存储一个<i,1>
+				node->leaf = false;//leaf改为false，false是扩展吗
 			}
 			else{
 				if(endNode == endn){
 					deleteNode.push_back(make_pair(i, -1));
-					node->leaf = true;
+					node->leaf = true;//不扩展
 				}
 			
 			}
@@ -221,33 +222,34 @@ vector<pair<vector<int>, double>> prefix::computeTruePST(vector<int>& id, int nu
 	for(int i = 0; i < this->nodes1.size(); i ++){
 		prefixnode* node = this->nodes1[i];
 	
-		if(node->path.back() == fanout - 1 && node->trueflag != -1){
+		if(node->path.back() == fanout - 1 && node->trueflag != -1){//每一个&开始选
 			
-			vector<int> oneresult; 
-			oneresult.insert(oneresult.end(), node->path.begin() + 1, node->path.end());
-			orgresult.push_back(oneresult);
-			hitnode.push_back(i);
+			vector<int> oneresult; //一个结果
+			oneresult.insert(oneresult.end(), node->path.begin() + 1, node->path.end());//oneresult中插入从开始到结束的所有字符
+			orgresult.push_back(oneresult);//orgresult中加入oneresult
+			hitnode.push_back(i);//hitnode中加入i
 		}
 		
 	}
 	
-	vector<double> frequency; frequency.resize(orgresult.size(), 0);
+	vector<double> frequency; frequency.resize(orgresult.size(), 0);//frequency大小为orgresult的大小
 
 	
 
 	set<int> checkset;
 
-	for(int j = 0; j < hitnode.size(); j ++){	
+	for(int j = 0; j < hitnode.size(); j ++){	//对于每一个收录的字符串
 		for(set<int>::iterator itr = this->nodes1[hitnode[j]]->idx.begin(); itr != this->nodes1[hitnode[j]]->idx.end(); itr ++){
 			int idx = id[*itr];
-			if(raw[idx].size() == orgresult[j].size())
+			if(raw[idx].size() == orgresult[j].size())//如果这个用户的字符串的大小与第j个字符串的大小相等，频数+1？？？
 				frequency[j] += 1;
 		}
 	}
 
 
 	vector<double> noisyone;
-	noise::NoisyVec_delta(eng, this->raw.size() - number, frequency, noisyone, ep/(2));
+	noise::NoisyVec_delta(eng, this->raw.size() - number, frequency, noisyone, ep/(2));//加噪函数
+
 
 	
 	//consistency enforcement
@@ -289,37 +291,37 @@ void prefix::computeweightavg(vector<int>& hitnode, vector<double>& frequency, i
 
 
 
-void prefix::split_PFS3(int idx, vector<prefixnode*>& children, int startRecord, vector<int>& id) {
-
-	prefixnode* f = nodes1[idx];
+void prefix::split_PFS3(int idx, vector<prefixnode*>& children, int startRecord, vector<int>& id) {//插入26个孩子节点，每个字符一个节点，节点中包括了这一层拥有这个字符的用户编号
+	//idx=0，children，startRecord=number1=用户数*0.8，id即打乱后的用户编号
+	prefixnode* f = nodes1[idx];//f=第idx个节点，编号为idx的节点
 	vector<set<int>> sub;
 
-	for(int i = 0; i < fanout; i ++){
+	for(int i = 0; i < fanout; i ++){//在sub中放入26个整数集合
 		set<int> x;
 		sub.push_back(x);
 	}
 
-	for(set<int>::iterator itr =f->idx.begin(); itr != f->idx.end(); itr ++){
+	for(set<int>::iterator itr =f->idx.begin(); itr != f->idx.end(); itr ++){//遍历此节点所属的id编号
 		
-		if(*itr < startRecord) continue;
+		if(*itr < startRecord) continue;//id编号要大于起始编号，才开始操作
 
-		int loc = id[*itr];
+		int loc = id[*itr];//定位这个id编号
 		
-		if(this->raw[loc].size() < f->depth + 1) continue;
+		if(this->raw[loc].size() < f->depth + 1) continue;//如果raw的大小达不到这个深度，则没有考虑的必要
 		else{
 			
-			sub[this->raw[loc][f->depth]].insert(*itr);	
+			sub[this->raw[loc][f->depth]].insert(*itr);	//否则 这个用户的这一层字母所对应的集合增加这个id编号
 			
 		}
 		
 	}								
-	
+	//也就是说，sub中是这一层有哪些字符对应了哪些用户
 	
 	for (int i = 0; i < fanout; i++) {
-		deque<int> newpath = f->path;
-		newpath.push_back(i);													
-		prefixnode* mm = new prefixnode(sub[i], f->depth + 1, newpath, idx, startRecord);
-		children.push_back(mm);
+		deque<int> newpath = f->path;//
+		newpath.push_back(i);					//加入所有的字符								
+		prefixnode* mm = new prefixnode(sub[i], f->depth + 1, newpath, idx, startRecord);//生成新节点
+		children.push_back(mm);//children中加入了26个节点
 	}
 }
 

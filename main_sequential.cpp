@@ -24,7 +24,7 @@ double total_variation_distance(vector<double>& a, vector<double>& b) {
 }
 
 
-bool compare_vector(pair<vector<int>, double>& a, pair<vector<int>, double>& b){
+bool compare_vector(pair<vector<int>, double>& a, pair<vector<int>, double>& b){//根据第二个数由大到小排序
 	return a.second > b.second;
 }
 
@@ -127,30 +127,30 @@ double topk_re_inc(vector<pair<vector<int>, double>>& a, map<vector<int>, double
 
 
 
-map<vector<int>, double> getAccurateResult(int ks, vector<vector<vector<int>>>& orgraw, vector<vector<int>>& result){
-	
+map<vector<int>, double> getAccurateResult(int ks, vector<vector<vector<int>>>& orgraw, vector<vector<int>>& result){//返回所有字符串及其频数，将前k个字符串存储到topks中
+	//ks:kvector的最后一个元素，也就是100，orgraw是初始字符串数据，result是存储前k个字符串的
 	map<vector<int>, double> statistic;
-	for(vector<vector<vector<int>>>::iterator itr = orgraw.begin(); itr != orgraw.end(); itr ++){
+	for(vector<vector<vector<int>>>::iterator itr = orgraw.begin(); itr != orgraw.end(); itr ++){//遍历每个用户
 		for(int j = 0; j < itr->size(); j ++){
-			map<vector<int>, double>::iterator itr_find = statistic.find(itr->at(j));
-			if(itr_find != statistic.end()){
-				itr_find->second += 1.0/itr->size();
+			map<vector<int>, double>::iterator itr_find = statistic.find(itr->at(j));//statistic中查找每个用户的每个字符串
+			if(itr_find != statistic.end()){//如果没找到
+				itr_find->second += 1.0/itr->size();//itr_find的第二个数就加1/此用户的字符串个数？？往哪加呀
 			}
 			else{
-				statistic.insert(make_pair(itr->at(j), 1.0/itr->size()));
+				statistic.insert(make_pair(itr->at(j), 1.0/itr->size()));//如果找得到statistic就插入该字符串和1/该用户所拥有的字符串数量
 			}
 		}
 	}
-	vector<pair<vector<int>, double>> statisticVector;
-	statisticVector.insert(statisticVector.end(), statistic.begin(), statistic.end());
-	sort(statisticVector.begin(), statisticVector.end(), compare_vector);
+	vector<pair<vector<int>, double>> statisticVector;//数据容器
+	statisticVector.insert(statisticVector.end(), statistic.begin(), statistic.end());//插入statistic的所有内容
+	sort(statisticVector.begin(), statisticVector.end(), compare_vector);//按出现频数大小排序
 
-	for(int j = 0; j < statisticVector.size(); j ++){
+	for(int j = 0; j < statisticVector.size(); j ++){//将前k个字符串加入result中
 		if(result.size() < ks){
 			result.push_back(statisticVector[j].first);
 		}
 	}
-	return statistic;
+	return statistic;//statistic存放了所有的字符串及其频数
 }
 
 
@@ -186,7 +186,7 @@ int main(int argc, char *argv[]) {
 	random_device rd;						//non-deterministic random engine  生成随机数
 	engine eng(rd());						//deterministic engine with a random seed
  
-	vector<int> id_backup;
+	vector<int> id_backup;					//用户编号
 	
 	prefix prefix(eng, filename, id_backup);//read data 把数据读入orgraw中
 
@@ -200,22 +200,22 @@ int main(int argc, char *argv[]) {
 		xxf<<"epsilon= "<<epsilon<<" "<<endl;
 		xxf.close();
 
-		vector<double> temp; temp.resize(rep, 0);	//temp大小是10（重复次数），内容为0
+		vector<double> temp; temp.resize(rep, 0);	//temp大小是10（重复次数），内容为0，10个0
 		vector<vector<double>> lerr_fscore;		//大小为10，存储内容temp
 		lerr_fscore.resize(kvector.size(), temp);
 		
 		
 
 		for (int i = 0; i < rep; i++) {		
-			cout<<"epsilon: "<<epsilon<<" rep: "<<i<<endl;
-			vector<int> id = id_backup;
+			cout<<"epsilon: "<<epsilon<<" rep: "<<i<<endl;//对于每一个epsilon，每一次重复
+			vector<int> id = id_backup;//用户编号
 			srand((unsigned)time(NULL));
-			std::random_shuffle ( id.begin(),id.end() );//shuffle data 打乱数据
+			std::random_shuffle ( id.begin(),id.end() );//shuffle data 打乱数据，打乱用户编号
 
 			prefix.initialRoot(id);		//初始化根节点
 		
-			vector<vector<int>> topks;	
-			map<vector<int>, double> statistic =	getAccurateResult(kvector.back(), prefix.orgraw, topks);//获取精确结果被
+			vector<vector<int>> topks;	//存储出现频率最高的字符串
+			map<vector<int>, double> statistic =	getAccurateResult(kvector.back(), prefix.orgraw, topks);//获取精确结果，返回所有字符串及其频数，将前k个字符串存储到topks中
 
 			vector<pair<vector<int>, double>> result = prefix.PST3(epsilon, id, 0.8, kvector.back());//privTrie
 
