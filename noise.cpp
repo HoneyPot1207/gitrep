@@ -1,5 +1,5 @@
 #include "noise.h"
-
+#include "include/Python.h"
 noise::noise() {
 }
 
@@ -348,8 +348,58 @@ void noise::NoisyVecZero_new(engine& eng, double sum, int d, int maxlength, int 
 }
 
 
+void noise::Noisy_wheel(double eps, vector<double>& count, vector<double>& noisyone) {
+	//初始化Python环境  
+	Py_Initialize();
+	// 检查初始化是否成功  
+	if (!Py_IsInitialized()) {
+		cout << "Initialized" << endl;
+		exit(0);
+	}
+	PyRun_SimpleString("import sys");
+	//添加Insert模块路径  
+	//PyRun_SimpleString(chdir_cmd.c_str());
+	PyRun_SimpleString("sys.path.append('./')");
+	PyObject * pModule, * pDict, * pFunc, * pArgs, *pClass, * pInstance;
+	//导入模块  
+	pModule = PyImport_ImportModule("wheel");
+	//验证模块是否导入成功
+	if (!pModule)
+	{
+		cout << "Python get module failed." << endl;
+		exit(0);
+	}
+	cout << "Python get module succeed." << endl;
+	//完成了py文件的导入
+
+	//导入方法字典（我也不知道是个什么玩意，先导着吧）
+	pDict = PyModule_GetDict(pModule);
+	//通过字典属性获取模块中的类
+	pClass = PyDict_GetItemString(pDict, "Wheel");
+	//实例化获取的类
+	PyObject* pConstruct = PyInstanceMethod_New(pClass);
+	//参数设置参数这里要再考虑一下
+	int d;
+	int m;
+	pArgs = Py_BuildValue("(d)", eps);
+	PyObject* pIns = PyObject_CallObject(pConstruct, nullptr);
 
 
+	//调用函数
+	PyObject* tuple = PyTuple_New(count.size());
+	for (int i = 0;i < count.size();i++) 
+		PyTuple_SET_ITEM(tuple, i, Py_BuildValue("d", count[i]));
+	PyObject* pArg = Py_BuildValue("O", tuple);
+	PyObject* result = PyObject_CallMethod(pInstance, "coreRandomizer", "O",pArg);
+	noisyone = tupletoVector_Double( result, count.size());
+}
+vector<double> tupletoVector_Double(PyObject* object,int size) {
+	vector<double> result;
+	PyTupleObject tuple = (PyTupleObject)result;
+	for (int i = 0;i < size;i++)
+		result.push_back(tuple.);
+	return result;
+}
 
 
 

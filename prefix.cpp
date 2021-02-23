@@ -155,7 +155,7 @@ void prefix::computePST3_delta(int startNode, int endNode, double ep, vector<int
 		vector<int> seq = this->raw[id[i]];	//seq为当前用户的字符串
 		for(int seqi = 0; seqi < seq.size(); seqi ++){
 			if(nodes1[idx]->leaf == false)//
-				idx = nodes1[idx]->next[seq[seqi]];//idx=该字符串的第i个字符（数字）
+				idx = nodes1[idx]-> next[seq[seqi]];//idx=该字符串的第i个字符（数字）
 			else break;
 		}//总之就是遇到子节点，就返回
 
