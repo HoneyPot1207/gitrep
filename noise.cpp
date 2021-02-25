@@ -348,7 +348,7 @@ void noise::NoisyVecZero_new(engine& eng, double sum, int d, int maxlength, int 
 }
 
 
-void noise::Noisy_wheel(double eps, vector<double>& count, vector<double>& noisyone) {
+void noise::Noisy_wheel(double eps, vector<int>& count, vector<int>& noisycount, int d, int m) {
 	//初始化Python环境  
 	Py_Initialize();
 	// 检查初始化是否成功  
@@ -379,26 +379,18 @@ void noise::Noisy_wheel(double eps, vector<double>& count, vector<double>& noisy
 	//实例化获取的类
 	PyObject* pConstruct = PyInstanceMethod_New(pClass);
 	//参数设置参数这里要再考虑一下
-	int d;
-	int m;
-	pArgs = Py_BuildValue("(d)", eps);
-	PyObject* pIns = PyObject_CallObject(pConstruct, nullptr);
-
-
+	pArgs = Py_BuildValue("(i,i,d)", d,m,eps);
+	PyObject* pInstance = PyObject_CallObject(pConstruct, pArgs);//构造函数要传参
 	//调用函数
 	PyObject* tuple = PyTuple_New(count.size());
 	for (int i = 0;i < count.size();i++) 
-		PyTuple_SET_ITEM(tuple, i, Py_BuildValue("d", count[i]));
+		PyTuple_SET_ITEM(tuple, i, Py_BuildValue("i", count[i]));
 	PyObject* pArg = Py_BuildValue("O", tuple);
-	PyObject* result = PyObject_CallMethod(pInstance, "coreRandomizer", "O",pArg);
-	noisyone = tupletoVector_Double( result, count.size());
+	PyObject* result = PyObject_CallMethod(pInstance, "randomizer", "O",pArg);
+	noisycount = tupletoVector_Int(result,count.size());
 }
-vector<double> tupletoVector_Double(PyObject* object,int size) {
-	vector<double> result;
-	PyTupleObject tuple = (PyTupleObject)result;
-	for (int i = 0;i < size;i++)
-		result.push_back(tuple.);
-	return result;
+vector<int> tupletoVector_Int(PyObject* object,int size) {
+	
 }
 
 

@@ -108,17 +108,7 @@ prefix::~prefix() {
 
 void prefix::initialRoot(vector<int>& id){//初始化根节点
 	this->raw.clear();
-	for(int i = 0; i < orgraw.size(); i ++){//把orgraw中的内容随机选取一个加到raw中，使得每个用户只有一个字符串
-		if(orgraw[i].size() > 1){//如果用户有多个字符串
-			int loc = noise::nextInt(eng, orgraw[i].size());//每个用户的n个字符串中随机选取一个
-			this->raw.push_back(orgraw[i][loc]);//向raw中添加该字符串
-
-		}
-		else{//如果用户只有一个字符串
-			this->raw.push_back(orgraw[i].at(0));//向raw中添加该字符串
-		}
-	}
-	
+	raw = orgraw;
 	
 	for(int i =0; i < nodes1.size(); i ++){
 		delete nodes1[i];
@@ -143,13 +133,41 @@ bool compare_vector(pair<int, double> a, pair<int, double> b){
 
 
 
-void prefix::computePST3_delta(int startNode, int endNode, double ep, vector<int>& id, vector<int>& priv, int c, vector<pair<int, int>>& deleteNode, int endn){//计算具体的频数
-
-	map<int, int> count; 
-	for(int i = 0; i < priv.size(); i ++)//count中存储与priv数量相等的数对，第一个数是priv[i]，第二个数是0
-		count.insert(make_pair(priv[i], 0));
-
-	for(int i = startNode; i < endNode; i ++){	//从这组用户的第一个用户开始，到这组用户的最后一个用户为止
+void prefix::computePST3_delta(int startNode, int endNode, double ep, vector<int>& id, vector<int>& priv, int c, vector<pair<int, int>>& deleteNode, int endn, int groupi){//计算具体的频数
+	//假设nodelabel是节点的开始编号，也可能是priv中存放，先不管
+	map<int, int> preMap;//<节点编号，前缀编号>
+	vector<int> count; //<频数>
+	int pre0;
+	int d = 1;//计算前缀数量
+	for (int i = 0;i < groupi;i++)
+		d *= 26;
+	for (int i = 0; i < priv.size(); i++) {//计算新节点所对应的前缀编号，0-d
+		int pre = 0;//前缀编号
+		for (deque<int>::iterator itr = this->nodes1[priv[i]]->path.begin() + 1; itr != this->nodes1[priv[i]]->path.end(); itr++)
+			pre = pre * 26 + *itr;
+		if (!i) pre0 = pre;
+		preMap.insert(make_pair(priv[i], pre-pre0));
+		count.push_back(0);
+	}
+	for (int i = startNode; i < endNode;i++) {
+		vector<int> rawPrefix;//存储前缀编号
+		vector<int> noisyone;
+		for (int j = 0;j < raw[id[i]].size();j++) {//计算此用户的前缀编号
+			int pre=0;
+			for (int k = 0;k < groupi; k++) {
+				if (k >= raw[id[i]][j].size())	break;
+				pre = pre * 26 + raw[id[i]][j][k];
+			}
+			rawPrefix.push_back(pre - pre0);
+		}
+		Noisy_wheel(ep / 2,rawPrefix, noisyone,d,rawPrefix.size());
+		for(int j=0;j<noisyone.size();j++)
+			if (noisyone[j]) {
+				int m = preMap.find(j + pre0)->second;
+				count[m]++;
+			}
+	}
+	/*for(int i = startNode; i < endNode; i ++){	//从这组用户的第一个用户开始，到这组用户的最后一个用户为止
 		
 		int idx = 0;//字符，从0到字符的最大编号
 		vector<int> seq = this->raw[id[i]];	//seq为当前用户的字符串
@@ -162,27 +180,27 @@ void prefix::computePST3_delta(int startNode, int endNode, double ep, vector<int
 		if(count.find(idx) != count.end()){//如果count中能找到idx所指的字符，
 			count.find(idx)->second ++;//count，第一个数idx所对应的第二个数就+1（频数）
 		}
-	}
+	}*/
 
 	
 	int number = endNode - startNode;//这一组的用户数量
 
-	vector<double> countvector;
+	/*vector<double> countvector;
 	for(map<int, int>::iterator itr = count.begin(); itr != count.end(); itr ++)//countvector中存储count的第二个数，所有用户中含priv的个数
 		countvector.push_back(itr->second);
-
-	vector<double> noisyone;
-	noise::NoisyVec_delta(eng, number, countvector, noisyone, ep/(2));//加噪，结果放在noisyone中
+		*/
+	//vector<double> noisyone;
+	//noise::NoisyVec_delta(eng, number, countvector, noisyone, ep/(2));//加噪，结果放在noisyone中
 	
 
 	map<int, double> noisycount; int i = 0; 
-	for(map<int, int>::iterator itr = count.begin(); itr != count.end(); itr ++, i ++){//itr迭代count
-		noisycount.insert(make_pair(itr->first, noisyone[i]));//noisycount中存储count的第一个数，也就是priv[i]，可能的字符，加噪后的数字
+	for(map<int, int>::iterator itr = preMap.begin(); itr != preMap.end(); itr ++, i ++){//itr迭代preMap
+		noisycount.insert(make_pair(itr->first, count[i]));//noisycount中存储priv[i]<->加噪后的频数
 	}
 	
 	for(int i = 0; i < priv.size(); i ++){
 		int nodelabel = priv[i];//nodelabel是节点编号
-		prefixnode* node = this->nodes1[nodelabel];//当前节点的子节点是nodel的这个字符所指的节点
+		prefixnode* node = this->nodes1[nodelabel];//当前节点是nodel的这个字符所指的节点
 		
 		node->score += noisycount.find(nodelabel)->second;//频数是这个字符加噪后的频数
 		node->npart += number;//npart是这一组的用户数量
@@ -215,15 +233,15 @@ void prefix::computePST3_delta(int startNode, int endNode, double ep, vector<int
 
 
 
-vector<pair<vector<int>, double>> prefix::computeTruePST(vector<int>& id, int number, double ep, int k){
+vector<pair<vector<int>, double>> prefix::computeTruePST(vector<int>& id, int number, double ep, int k) {
 
 	vector<vector<int>> orgresult;  vector<int> hitnode;
 
-	for(int i = 0; i < this->nodes1.size(); i ++){
+	for (int i = 0; i < this->nodes1.size(); i++) {
 		prefixnode* node = this->nodes1[i];
-	
-		if(node->path.back() == fanout - 1 && node->trueflag != -1){//每一个&开始选
-			
+
+		if (node->path.back() == fanout - 1 && node->trueflag != -1) {//每一个&开始选
+
 			vector<int> oneresult; //一个结果
 			oneresult.insert(oneresult.end(), node->path.begin() + 1, node->path.end());//oneresult中插入从开始到结束的所有字符
 			orgresult.push_back(oneresult);//orgresult中加入oneresult
@@ -231,33 +249,33 @@ vector<pair<vector<int>, double>> prefix::computeTruePST(vector<int>& id, int nu
 		}
 		//orgresult存储了所有以&结尾的高频字符串（仅超过阈值），hitnode为&所在节点编号
 	}
-	
+
 	vector<double> frequency; frequency.resize(orgresult.size(), 0);//frequency大小为orgresult的大小
 
-	
+
 
 	set<int> checkset;
 
-	for(int j = 0; j < hitnode.size(); j ++){	//对于每一个收录的字符串
-		for(set<int>::iterator itr = this->nodes1[hitnode[j]]->idx.begin(); itr != this->nodes1[hitnode[j]]->idx.end(); itr ++){//遍历&节点对应的所有用户
+	for (int j = 0; j < hitnode.size(); j++) {	//对于每一个收录的字符串
+		for (set<int>::iterator itr = this->nodes1[hitnode[j]]->idx.begin(); itr != this->nodes1[hitnode[j]]->idx.end(); itr++) {//遍历&节点对应的所有用户
 			int idx = id[*itr];
-			if(raw[idx].size() == orgresult[j].size())//如果这个用户的字符串的大小与节点计算的对应字符串的大小相等，频数+1
+			if (raw[idx].size() == orgresult[j].size())//如果这个用户的字符串的大小与节点计算的对应字符串的大小相等，频数+1
 				frequency[j] += 1;
 		}
 	}
 	//frequency中存储了用户字符串与计算字符串大小相同的频数
 
 	vector<double> noisyone;
-	noise::NoisyVec_delta(eng, this->raw.size() - number, frequency, noisyone, ep/(2));//加噪函数，noiseone为frequency加噪后的结果
+	noise::NoisyVec_delta(eng, this->raw.size() - number, frequency, noisyone, ep / (2));//加噪函数，noiseone为frequency加噪后的结果
 
 
-	
+
 	//consistency enforcement  猜测是根据一定的计算，即原先的频数是分组计算所得，对该频数扩大一定的倍数，使得频数与实际频数尽量相符，
-	computeweightavg(hitnode, noisyone, this->raw.size(), this->raw.size()- number);//加工量noisyone
+	computeweightavg(hitnode, noisyone, this->raw.size(), this->raw.size() - number);//加工量noisyone
 	boost(hitnode, noisyone, this->raw.size(), number);
 
 	vector<pair<int, double>> result;
-	for(int i = 0; i < noisyone.size(); i ++){
+	for (int i = 0; i < noisyone.size(); i++) {
 		result.push_back(make_pair(i, noisyone[i]));
 
 
@@ -266,7 +284,7 @@ vector<pair<vector<int>, double>> prefix::computeTruePST(vector<int>& id, int nu
 
 	vector<pair<vector<int>, double>> lastresult;
 
-	for(int i = 0; i < k && i < result.size(); i ++){
+	for (int i = 0; i < k && i < result.size(); i++) {
 		lastresult.push_back(make_pair(orgresult[result[i].first], result[i].second));
 
 	}

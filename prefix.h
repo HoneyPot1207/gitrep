@@ -69,7 +69,7 @@ public:
 	//end-of-tools
 
 	void initialRoot(vector<int>& id);
-	void computePST3_delta(int startNode, int endNode, double ep, vector<int>& id, vector<int>& priv, int c, vector<pair<int, int>>& deleteNode, int endn);
+	void computePST3_delta(int startNode, int endNode, double ep, vector<int>& id, vector<int>& priv, int c, vector<pair<int, int>>& deleteNode, int endn, int groupi);
 	vector<pair<vector<int>, double>> computeTruePST(vector<int>&, int number, double ep, int k);
 	void split_PFS3(int idx, vector<prefixnode*>& children, int startRecord, vector<int>& id);
 	
@@ -87,7 +87,7 @@ public:
 
 	vector<vector<vector<int>>> orgraw;
 
-	vector<vector<int>> raw;				//original data
+	vector<vector<vector<int>>> raw;				//original data
 	set<vector<int>> dictionary;
 	map<deque<int>, vector<double>> truengrams;
 

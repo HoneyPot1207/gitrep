@@ -23,7 +23,7 @@ public:
 		vector<int> priv(1);//初始化了一个默认为0的元素
 		
 		int number1 = size() * ratio;	//size()用户的数量
-
+		int nodeLabel = 0;
 		int step = 8.0/(ep * ep) * 10*10;//每一组的人数
 		if(step < number1 /1000){
 			step = number1/1000;
@@ -39,7 +39,7 @@ public:
 			
 			vector<pair<int, int>> deleteNode;	//存储数对
 			if(*priv.begin() > 0){
-				computePST3_delta(startNode,endNode, ep, id, priv, eta, deleteNode, number1);//compute the contributions to frequencies made by users in this group.This function returns the nodes to be expanded，计算节点的频数，扩张节点
+				computePST3_delta(startNode,endNode, ep, id, priv, eta, deleteNode, number1, nodeLabel);//compute the contributions to frequencies made by users in this group.This function returns the nodes to be expanded，计算节点的频数，扩张节点
 				groupi ++;//下一层
 			}
 			else{
