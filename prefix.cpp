@@ -1,5 +1,4 @@
 #include "prefix.h"
-
 //
 prefixnode::prefixnode(set<int>& idx1, int depth1, deque<int> path1, int parent1, int startRecord1) {//初始化节点
 	this->idx = idx1;//id编号
@@ -130,43 +129,43 @@ bool compare_vector(pair<int, double> a, pair<int, double> b){
 }
 
 
-
+bool cmp_vector(vector<int> a, vector<int> b) {
+	if (a.size() != b.size())
+		return false;
+	else {
+		for (int i = 0;i < a.size();i++)
+			if (a[i] != b[i])	return false;
+		return true;
+	}
+		
+}
 
 
 void prefix::computePST3_delta(int startNode, int endNode, double ep, vector<int>& id, vector<int>& priv, int c, vector<pair<int, int>>& deleteNode, int endn, int groupi){//计算具体的频数
 	//假设nodelabel是节点的开始编号，也可能是priv中存放，先不管
-	map<int, int> preMap;//<节点编号，前缀编号>
-	vector<int> count; //<频数>
-	int pre0;
-	int d = 1;//计算前缀数量
-	for (int i = 0;i < groupi;i++)
-		d *= 26;
-	for (int i = 0; i < priv.size(); i++) {//计算新节点所对应的前缀编号，0-d
-		int pre = 0;//前缀编号
+	vector<int> count(priv.size()); //<频数>
+	vector<vector<int>> pres;//存储前缀
+	for (int i = 0; i < priv.size(); i++) {//计算每个新节点的前缀，存入pres中
+		vector<int> prei;
 		for (deque<int>::iterator itr = this->nodes1[priv[i]]->path.begin() + 1; itr != this->nodes1[priv[i]]->path.end(); itr++)
-			pre = pre * 26 + *itr;
-		if (!i) pre0 = pre;
-		preMap.insert(make_pair(priv[i], pre-pre0));
-		count.push_back(0);
+			prei.push_back(*itr);
+		pres.push_back(prei);
 	}
 	for (int i = startNode; i < endNode;i++) {
-		vector<int> rawPrefix;//存储前缀编号
-		vector<int> noisyone;
-		for (int j = 0;j < raw[id[i]].size();j++) {//计算此用户的前缀编号
-			int pre=0;
-			for (int k = 0;k < groupi; k++) {
-				if (k >= raw[id[i]][j].size())	break;
-				pre = pre * 26 + raw[id[i]][j][k];
+		vector<int> numbers;
+		for (int j = 0;j < raw[i].size();j++) {
+			vector<int> pre;//存储用户字符串的前缀
+			for (int k = 0;k < groupi;k++)
+				pre.push_back(raw[i][j][k]);
+			for (int k = 0;k < pres.size();k++) {//逐个比较节点前缀与用户改字符串的前缀
+				if (cmp_vector(pres[k], pre))	numbers.push_back(k);//如果相等，则在numbers中加入序号
 			}
-			rawPrefix.push_back(pre - pre0);
 		}
-		Noisy_wheel(ep / 2,rawPrefix, noisyone,d,rawPrefix.size());
-		for(int j=0;j<noisyone.size();j++)
-			if (noisyone[j]) {
-				int m = preMap.find(j + pre0)->second;
-				count[m]++;
-			}
+		int cnt = noise::Noisy_wheel(ep, numbers, priv.size(), numbers.size());//加噪之后的数据
+		count[cnt]++;
 	}
+	//整个算下来count就是加噪后的频数
+
 	/*for(int i = startNode; i < endNode; i ++){	//从这组用户的第一个用户开始，到这组用户的最后一个用户为止
 		
 		int idx = 0;//字符，从0到字符的最大编号
@@ -194,8 +193,8 @@ void prefix::computePST3_delta(int startNode, int endNode, double ep, vector<int
 	
 
 	map<int, double> noisycount; int i = 0; 
-	for(map<int, int>::iterator itr = preMap.begin(); itr != preMap.end(); itr ++, i ++){//itr迭代preMap
-		noisycount.insert(make_pair(itr->first, count[i]));//noisycount中存储priv[i]<->加噪后的频数
+	for (int i = 0;i < priv.size();i++) {
+		noisycount.insert(make_pair(priv[i], count[i]));//noisycount中存储priv[i]<->加噪后的频数
 	}
 	
 	for(int i = 0; i < priv.size(); i ++){

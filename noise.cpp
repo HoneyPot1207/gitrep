@@ -348,7 +348,7 @@ void noise::NoisyVecZero_new(engine& eng, double sum, int d, int maxlength, int 
 }
 
 
-void noise::Noisy_wheel(double eps, vector<int>& count, vector<int>& noisycount, int d, int m) {
+int noise::Noisy_wheel(double eps, vector<int>& count,  int d, int m) {
 	//初始化Python环境  
 	Py_Initialize();
 	// 检查初始化是否成功  
@@ -387,9 +387,9 @@ void noise::Noisy_wheel(double eps, vector<int>& count, vector<int>& noisycount,
 		PyTuple_SET_ITEM(tuple, i, Py_BuildValue("i", count[i]));
 	PyObject* pArg = Py_BuildValue("O", tuple);
 	PyObject* result = PyObject_CallMethod(pInstance, "randomizer", "O",pArg);
-	noisycount = tupletoVector_Int(result,count.size());
+	return(drawInt(result,count.size()));
 }
-vector<int> tupletoVector_Int(PyObject* object,int size) {
+int drawInt(PyObject* object,int size) {
 	
 }
 

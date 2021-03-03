@@ -49,7 +49,7 @@ public:
 	static double NoisyVec_delta(engine& eng, int number, int count, double eps);
 	static void NoisyVec_delta(engine& eng, int flag, vector<double>& count, vector<double>& noisyone, double eps);
 	static void NoisyVecZero_delta(engine& eng, double sum, int d, int maxlength, int times, double eps, vector<double>& noisyhis);
-	static int Noisy_wheel(double eps, vector<int>& count, vector<int>& noisycount, int d, int m);
+	static int Noisy_wheel(double eps, vector<int>& count, int d, int m);
 
 	static void NoisyVec_new(engine& eng, double sum, vector<int>& hist, int d, int maxlength, double eps, vector<double>& noisyhis);
 	static void NoisyVecZero_new(engine& eng, double sum, int d, int maxlength, int times, double eps, vector<double>& noisyhis);
