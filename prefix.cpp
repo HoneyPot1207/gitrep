@@ -323,13 +323,13 @@ void prefix::split_PFS3(int idx, vector<prefixnode*>& children, int startRecord,
 		if(*itr < startRecord) continue;//id编号要大于起始编号，才开始操作
 
 		int loc = id[*itr];//定位这个id编号
-		
-		if(this->raw[loc].size() < f->depth + 1) continue;//如果raw的大小达不到这个深度，则没有考虑的必要
-		else{
-			
-			sub[this->raw[loc][f->depth]].insert(*itr);	//否则 这个用户的这一层字母所对应的集合增加这个id编号
-			
+		for (int i = 0;i < raw[loc].size();i++) {
+			if (this->raw[loc][i].size() < f->depth + 1) continue;//如果raw的大小达不到这个深度，则没有考虑的必要
+			else {
+				sub[this->raw[loc][i][f->depth]].insert(*itr);	//否则 这个用户的这一层字母所对应的集合增加这个id编号
+			}
 		}
+		
 		
 	}								
 	//也就是说，sub中是这一层有哪些字符对应了哪些用户

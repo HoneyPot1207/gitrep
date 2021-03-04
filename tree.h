@@ -96,7 +96,7 @@ public:
 
 
 	virtual void split_PFS3(int idx, vector<T*>& children, int startRecord, vector<int>& id) =  0;
-	virtual void computePST3_delta(int startNode, int endNode, double ep, vector<int>& id, vector<int>& priv, int c, vector<pair<int, int>>& deleteNode, int number) = 0;
+	virtual void computePST3_delta(int startNode, int endNode, double ep, vector<int>& id, vector<int>& priv, int c, vector<pair<int, int>>& deleteNode, int number, int groupi) = 0;
 	
 
 	virtual vector<pair<vector<int>, double>> computeTruePST(vector<int>&, int number, double ep, int k) = 0;
